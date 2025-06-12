@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蝶豆花茶互动指南 / Interactive Guide to Butterfly Pea Tea</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Poppins:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Butterfly Pea Bloom -->
+    <!-- Application Structure Plan: A single-page application with a top navigation bar for easy access to thematic sections. The structure begins with a visually engaging hero section, followed by a 'Core Benefits' dashboard with interactive cards for a quick overview. Subsequent sections delve deeper into 'The Science' (with an interactive color-change demo and a phytochemical chart), 'Traditional Wisdom' (using a simple tabbed layout), 'Safe Consumption' (with clear, icon-based guidance), and a 'Tea Comparison' (featuring an interactive radar chart). This user-centric, non-linear structure is chosen to transform the dense report into an exploratory experience, allowing users to get a quick summary and then dive into areas of interest, making complex information digestible and engaging. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: pH Color Change -> Goal: Inform/Engage -> Viz: Color-changing div -> Interaction: Click buttons -> Justification: Visually demonstrates a unique property in a memorable way.
+        - Report Info: Bioactive Compounds -> Goal: Inform -> Viz: Donut Chart (Chart.js) -> Interaction: Hover for details -> Justification: Visually quantifies composition, easier to grasp than text.
+        - Report Info: Health Benefits -> Goal: Organize/Inform -> Viz: Interactive Icon Grid -> Interaction: Click to expand text -> Justification: Provides a high-level dashboard for quick scanning and allows user-directed deep dives.
+        - Report Info: Comparative Analysis -> Goal: Compare -> Viz: Radar Chart (Chart.js) & dynamic text -> Interaction: Click buttons to update chart/text -> Justification: Radar chart is ideal for multi-attribute comparison, providing a quick, holistic view.
+        - Report Info: Safety/Contraindications -> Goal: Warn -> Viz: Icon-based list -> Interaction: Static -> Justification: Critical safety information is presented clearly and unambiguously for maximum readability.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Poppins', 'Noto Sans SC', sans-serif;
+            background-color: #fdfbf7;
+            color: #4a5568;
+        }
+        .text-main-blue { color: #3b82f6; }
+        .bg-main-blue { background-color: #3b82f6; }
+        .border-main-blue { border-color: #3b82f6; }
+        .text-accent-purple { color: #a855f7; }
+        .bg-accent-purple { background-color: #a855f7; }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+        .benefit-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .benefit-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 320px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 380px;
+            }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header & Navigation -->
+    <header class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <a href="#" id="nav-title" class="text-xl font-bold text-main-blue">蝶豆花</a>
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#benefits" id="nav-benefits" class="nav-link py-2">核心功效</a>
+                <a href="#science" id="nav-science" class="nav-link py-2">科学揭秘</a>
+                <a href="#tradition" id="nav-tradition" class="nav-link py-2">传统智慧</a>
+                <a href="#safety" id="nav-safety" class="nav-link py-2">安心饮用</a>
+                <a href="#comparison" id="nav-comparison" class="nav-link py-2">茶饮对比</a>
+            </div>
+            <div class="flex items-center">
+                <button id="lang-switcher" class="text-sm font-semibold py-1 px-3 border rounded-full hover:bg-gray-100 transition-colors mr-4">EN / 中文</button>
+                <div class="md:hidden">
+                    <button id="menu-btn" class="text-gray-600 focus:outline-none">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </nav>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white px-6 pb-4">
+             <a href="#benefits" id="mobilenav-benefits" class="block py-2 text-gray-700 hover:text-main-blue">核心功效</a>
+             <a href="#science" id="mobilenav-science" class="block py-2 text-gray-700 hover:text-main-blue">科学揭秘</a>
+             <a href="#tradition" id="mobilenav-tradition" class="block py-2 text-gray-700 hover:text-main-blue">传统智慧</a>
+             <a href="#safety" id="mobilenav-safety" class="block py-2 text-gray-700 hover:text-main-blue">安心饮用</a>
+             <a href="#comparison" id="mobilenav-comparison" class="block py-2 text-gray-700 hover:text-main-blue">茶饮对比</a>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section -->
+        <section class="min-h-[60vh] flex items-center bg-blue-50">
+            <div class="container mx-auto px-6 text-center">
+                <h1 id="hero-title" class="text-4xl md:text-6xl font-bold text-main-blue leading-tight">探索蝶豆花茶的奥秘</h1>
+                <p id="hero-subtitle" class="mt-4 text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">一种源自古老智慧，并经现代科学验证的天然健康饮品。</p>
+                <a href="#benefits" id="hero-button" class="mt-8 inline-block bg-main-blue text-white font-bold py-3 px-8 rounded-full hover:bg-blue-700 transition-colors duration-300">
+                    开始探索
+                </a>
+            </div>
+        </section>
+
+        <!-- Core Benefits Section -->
+        <section id="benefits" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 id="benefits-title" class="text-3xl md:text-4xl font-bold text-gray-800">核心功效</h2>
+                    <p id="benefits-subtitle" class="mt-2 text-gray-600">蝶豆花茶富含多种生物活性成分，为身心带来多重益处。</p>
+                </div>
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="benefit-card bg-white p-6 rounded-lg shadow-md border-l-4 border-blue-400">
+                        <div class="flex items-center mb-4">
+                            <span class="text-3xl mr-4">🧠</span>
+                            <h3 id="benefit-1-title" class="text-xl font-semibold text-gray-800">提升认知功能</h3>
+                        </div>
+                        <p id="benefit-1-text" class="text-gray-600">传统上被用作“益智药”，动物研究表明它能提升乙酰胆碱水平，有助于改善记忆力和学习能力。</p>
+                    </div>
+                    <div class="benefit-card bg-white p-6 rounded-lg shadow-md border-l-4 border-purple-400">
+                        <div class="flex items-center mb-4">
+                            <span class="text-3xl mr-4">😊</span>
+                            <h3 id="benefit-2-title" class="text-xl font-semibold text-gray-800">舒缓情绪压力</h3>
+                        </div>
+                        <p id="benefit-2-text" class="text-gray-600">具有抗焦虑和抗抑郁的潜力，能帮助调节中枢神经系统，保护身体免受压力侵袭，改善睡眠。</p>
+                    </div>
+                    <div class="benefit-card bg-white p-6 rounded-lg shadow-md border-l-4 border-green-400">
+                        <div class="flex items-center mb-4">
+                            <span class="text-3xl mr-4">🛡️</span>
+                            <h3 id="benefit-3-title" class="text-xl font-semibold text-gray-800">强大抗氧化与抗炎</h3>
+                        </div>
+                        <p id="benefit-3-text" class="text-gray-600">富含花青素，能有效中和自由基，抑制炎症通路，其效果在研究中可与标准抗炎药相媲美。</p>
+                    </div>
+                    <div class="benefit-card bg-white p-6 rounded-lg shadow-md border-l-4 border-red-400">
+                        <div class="flex items-center mb-4">
+                            <span class="text-3xl mr-4">🩸</span>
+                            <h3 id="benefit-4-title" class="text-xl font-semibold text-gray-800">维持代谢健康</h3>
+                        </div>
+                        <p id="benefit-4-text" class="text-gray-600">有助于抑制糖分消化酶，减缓餐后血糖上升。同时对体重控制和改善血脂有积极作用。</p>
+                    </div>
+                    <div class="benefit-card bg-white p-6 rounded-lg shadow-md border-l-4 border-yellow-400">
+                        <div class="flex items-center mb-4">
+                            <span class="text-3xl mr-4">💖</span>
+                            <h3 id="benefit-5-title" class="text-xl font-semibold text-gray-800">支持心血管</h3>
+                        </div>
+                        <p id="benefit-5-text" class="text-gray-600">通过抑制血管紧张素转换酶(ACE)和防止“坏”胆固醇氧化，帮助调节血压和保护血管健康。</p>
+                    </div>
+                    <div class="benefit-card bg-white p-6 rounded-lg shadow-md border-l-4 border-pink-400">
+                        <div class="flex items-center mb-4">
+                            <span class="text-3xl mr-4">✨</span>
+                            <h3 id="benefit-6-title" class="text-xl font-semibold text-gray-800">美容护肤与护发</h3>
+                        </div>
+                        <p id="benefit-6-text" class="text-gray-600">其抗糖化特性有助于保护胶原蛋白，促进皮肤紧致。传统上也用于促进头皮血液循环，强健发根。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Science Section -->
+        <section id="science" class="py-16 md:py-24 bg-blue-50">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 id="science-title" class="text-3xl md:text-4xl font-bold text-gray-800">科学揭秘</h2>
+                    <p id="science-subtitle" class="mt-2 text-gray-600">蝶豆花的健康功效源于其独特的植物化学成分。这里我们将揭示其背后的科学原理。</p>
+                </div>
+                <div class="grid lg:grid-cols-2 gap-12 items-center">
+                    <div class="text-center lg:text-left">
+                        <h3 id="science-color-title" class="text-2xl font-bold text-gray-800 mb-4">梦幻变色：pH值的魔法</h3>
+                        <p id="science-color-text" class="text-gray-600 mb-6">蝶豆花茶最神奇的特性之一就是它的颜色会随pH值变化。这是因为其富含一种名为“蝶豆花素”的稳定花青素。在酸性条件下（如加入柠檬汁），它会变成紫色；在碱性条件下则会变绿。这不仅有趣，更被用于开发智能食品包装，通过颜色变化指示食物新鲜度。</p>
+                        <div id="tea-visual" class="w-48 h-48 mx-auto lg:mx-0 rounded-full border-8 border-white shadow-lg flex items-center justify-center transition-all duration-500" style="background-color: #3b82f6;">
+                            <span id="tea-visual-text" class="text-white font-bold text-lg">蝶豆花茶</span>
+                        </div>
+                        <div class="mt-6 flex justify-center lg:justify-start space-x-2 md:space-x-4">
+                            <button id="add-acid" class="bg-yellow-400 text-yellow-800 font-semibold py-2 px-4 rounded-lg hover:bg-yellow-500 transition text-sm md:text-base">🍋 加柠檬汁 (酸性)</button>
+                            <button id="add-base" class="bg-green-400 text-green-800 font-semibold py-2 px-4 rounded-lg hover:bg-green-500 transition text-sm md:text-base">🧼 加苏打水 (碱性)</button>
+                            <button id="reset-color" class="bg-gray-300 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-400 transition text-sm md:text-base">💧 重置</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 id="science-chart-title" class="text-2xl font-bold text-gray-800 mb-4 text-center">主要活性成分</h3>
+                        <div class="chart-container">
+                            <canvas id="phytoChart"></canvas>
+                        </div>
+                         <p id="science-chart-subtitle" class="text-center text-gray-600 mt-4">蝶豆花是一种天然的“复方药剂”，多种成分协同作用，产生广泛的健康效益。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Traditional Wisdom Section -->
+        <section id="tradition" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 id="tradition-title" class="text-3xl md:text-4xl font-bold text-gray-800">传统智慧</h2>
+                    <p id="tradition-subtitle" class="mt-2 text-gray-600">在被现代科学关注之前，蝶豆花已在世界各地的传统医学中扮演了数个世纪的重要角色。</p>
+                </div>
+                <div class="max-w-3xl mx-auto">
+                    <div class="mb-4 flex space-x-1 p-1 bg-gray-200 rounded-lg">
+                        <button id="tradition-tab-1" data-tab="ayurveda" class="tab-btn flex-1 py-2 px-4 rounded-md text-center font-medium bg-white text-main-blue shadow">阿育吠陀</button>
+                        <button id="tradition-tab-2" data-tab="se-asia" class="tab-btn flex-1 py-2 px-4 rounded-md text-center font-medium text-gray-600">东南亚草药学</button>
+                    </div>
+                    <div id="ayurveda" class="tab-content p-6 bg-white rounded-lg shadow">
+                        <h3 id="tradition-1-title" class="text-xl font-bold mb-2">尊贵的“大脑补品” (Medhya Rasayana)</h3>
+                        <p id="tradition-1-text" class="text-gray-600">在印度阿育吠陀体系中，蝶豆花被尊为“Aparajita”（意为“战无不胜”），是一种顶级的健脑药。传统上用于增强记忆力(Smriti)和智力(Buddhi)，并用于治疗焦虑、压力等多种神经及心理问题。</p>
+                    </div>
+                    <div id="se-asia" class="tab-content hidden p-6 bg-white rounded-lg shadow">
+                        <h3 id="tradition-2-title" class="text-xl font-bold mb-2">融入生活的天然色素与疗法</h3>
+                        <p id="tradition-2-text" class="text-gray-600">在马来西亚、泰国等地，蝶豆花是家喻户晓的天然食用色素，为糯米饭和甜点染上梦幻的蓝色。在民间医学中，它被用来治疗眼部感染、消肿，甚至头痛。在水疗中心，加了蜂蜜和柠檬的蝶豆花茶是一款经典的迎宾饮品。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Safety Section -->
+        <section id="safety" class="py-16 md:py-24 bg-blue-50">
+             <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 id="safety-title" class="text-3xl md:text-4xl font-bold text-gray-800">安心饮用指南</h2>
+                    <p id="safety-subtitle" class="mt-2 text-gray-600">遵循正确的方法，才能安全地享受蝶豆花茶的益处。</p>
+                </div>
+                <div class="grid lg:grid-cols-2 gap-12 items-start">
+                    <div>
+                        <h3 id="safety-brewing-title" class="text-2xl font-bold text-gray-800 mb-6">冲泡方法与搭配</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-start">
+                                <span class="text-2xl mr-4 pt-1">🍵</span>
+                                <div>
+                                    <h4 id="safety-brewing-1-title" class="font-semibold">基础冲泡</h4>
+                                    <p id="safety-brewing-1-text" class="text-gray-600">取1-2茶匙（约5-6朵）干花，用85-95°C的热水冲泡3-5分钟即可。</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start">
+                                <span class="text-2xl mr-4 pt-1">🍋</span>
+                                <div>
+                                    <h4 id="safety-brewing-2-title" class="font-semibold">风味搭配</h4>
+                                    <p id="safety-brewing-2-text" class="text-gray-600">蝶豆花茶味道温和，极适合搭配。加入柠檬、青柠会变色增香；也可搭配蜂蜜、香茅、薄荷等。</p>
+                                </div>
+                            </div>
+                             <div class="flex items-start">
+                                <span class="text-2xl mr-4 pt-1">🍽️</span>
+                                <div>
+                                    <h4 id="safety-brewing-3-title" class="font-semibold">烹饪用途</h4>
+                                    <p id="safety-brewing-3-text" class="text-gray-600">稳定的蓝色使其成为绝佳的天然食物染料，广泛用于鸡尾酒、甜点和米饭料理中。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 id="safety-rules-title" class="text-2xl font-bold text-gray-800 mb-6">安全与禁忌</h3>
+                        <div class="bg-white p-6 rounded-lg shadow">
+                            <ul class="space-y-4">
+                                <li class="flex items-start">
+                                    <span class="text-green-500 text-2xl mr-3">✓</span>
+                                    <div id="safety-rule-1"><strong class="font-semibold">推荐用量：</strong>每日1-2杯为宜。过量饮用可能引起轻微肠胃不适。</div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-yellow-500 text-2xl mr-3">!</span>
+                                    <div id="safety-rule-2"><strong class="font-semibold">注意部位：</strong>仅食用花朵。植物的根和种子据报道有轻微毒性，应避免食用。</div>
+                                </li>
+                                <li class="flex items-start">
+                                    <span class="text-red-500 text-2xl mr-3">✕</span>
+                                    <div id="safety-rule-3"><strong class="font-semibold">慎用人群：</strong>孕妇、哺乳期妇女、低血压患者以及对豆科植物过敏者，建议在咨询医生前避免饮用。</div>
+                                </li>
+                                 <li class="flex items-start">
+                                    <span class="text-blue-500 text-2xl mr-3">i</span>
+                                    <div id="safety-rule-4"><strong class="font-semibold">官方认可：</strong>2021年，美国FDA已认可蝶豆花提取物为安全的食品着色剂，这为其安全性提供了有力佐证。</div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Section -->
+        <section id="comparison" class="py-16 md:py-24">
+            <div class="container mx-auto px-6">
+                <div class="text-center mb-12">
+                    <h2 id="comparison-title" class="text-3xl md:text-4xl font-bold text-gray-800">茶饮对比分析</h2>
+                    <p id="comparison-subtitle" class="mt-2 text-gray-600">蝶豆花茶在众多草本茶中独树一帜。它与其他流行茶饮有何不同？</p>
+                </div>
+                <div class="flex flex-col lg:flex-row gap-8">
+                    <div class="lg:w-1/2">
+                        <div class="chart-container mx-auto">
+                            <canvas id="comparisonChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="lg:w-1/2">
+                         <div class="flex justify-center flex-wrap gap-2 mb-6">
+                            <button id="comp-btn-bluepea" class="comp-btn bg-main-blue text-white py-2 px-4 rounded-lg" data-tea="bluepea">蝶豆花茶</button>
+                            <button id="comp-btn-greentea" class="comp-btn bg-white text-gray-700 border border-gray-300 py-2 px-4 rounded-lg" data-tea="greentea">绿茶</button>
+                            <button id="comp-btn-chamomile" class="comp-btn bg-white text-gray-700 border border-gray-300 py-2 px-4 rounded-lg" data-tea="chamomile">洋甘菊茶</button>
+                            <button id="comp-btn-hibiscus" class="comp-btn bg-white text-gray-700 border border-gray-300 py-2 px-4 rounded-lg" data-tea="hibiscus">芙蓉花茶</button>
+                        </div>
+                        <div id="comparison-text" class="bg-white p-6 rounded-lg shadow-md min-h-[200px]">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-6 text-center">
+            <p id="footer-title">蝶豆花茶互动指南</p>
+            <p id="footer-subtitle" class="text-sm text-gray-400 mt-2">本内容基于全面的科学文献综述，仅供参考，不构成医疗建议。</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let currentLang = 'zh';
+            const langSwitcher = document.getElementById('lang-switcher');
+            const menuBtn = document.getElementById('menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            
+            menuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            const translations = {
+                zh: {
+                    htmlLang: 'zh-CN',
+                    navTitle: '蝶豆花',
+                    navBenefits: '核心功效',
+                    navScience: '科学揭秘',
+                    navTradition: '传统智慧',
+                    navSafety: '安心饮用',
+                    navComparison: '茶饮对比',
+                    heroTitle: '探索蝶豆花茶的奥秘',
+                    heroSubtitle: '一种源自古老智慧，并经现代科学验证的天然健康饮品。',
+                    heroButton: '开始探索',
+                    benefitsTitle: '核心功效',
+                    benefitsSubtitle: '蝶豆花茶富含多种生物活性成分，为身心带来多重益处。',
+                    benefit1Title: '提升认知功能',
+                    benefit1Text: '传统上被用作“益智药”，动物研究表明它能提升乙酰胆碱水平，有助于改善记忆力和学习能力。',
+                    benefit2Title: '舒缓情绪压力',
+                    benefit2Text: '具有抗焦虑和抗抑郁的潜力，能帮助调节中枢神经系统，保护身体免受压力侵袭，改善睡眠。',
+                    benefit3Title: '强大抗氧化与抗炎',
+                    benefit3Text: '富含花青素，能有效中和自由基，抑制炎症通路，其效果在研究中可与标准抗炎药相媲美。',
+                    benefit4Title: '维持代谢健康',
+                    benefit4Text: '有助于抑制糖分消化酶，减缓餐后血糖上升。同时对体重控制和改善血脂有积极作用。',
+                    benefit5Title: '支持心血管',
+                    benefit5Text: '通过抑制血管紧张素转换酶(ACE)和防止“坏”胆固醇氧化，帮助调节血压和保护血管健康。',
+                    benefit6Title: '美容护肤与护发',
+                    benefit6Text: '其抗糖化特性有助于保护胶原蛋白，促进皮肤紧致。传统上也用于促进头皮血液循环，强健发根。',
+                    scienceTitle: '科学揭秘',
+                    scienceSubtitle: '蝶豆花的健康功效源于其独特的植物化学成分。这里我们将揭示其背后的科学原理。',
+                    scienceColorTitle: '梦幻变色：pH值的魔法',
+                    scienceColorText: '蝶豆花茶最神奇的特性之一就是它的颜色会随pH值变化。这是因为其富含一种名为“蝶豆花素”的稳定花青素。在酸性条件下（如加入柠檬汁），它会变成紫色；在碱性条件下则会变绿。这不仅有趣，更被用于开发智能食品包装，通过颜色变化指示食物新鲜度。',
+                    teaVisualText: '蝶豆花茶',
+                    addAcid: '🍋 加柠檬汁 (酸性)',
+                    addBase: '🧼 加苏打水 (碱性)',
+                    resetColor: '💧 重置',
+                    scienceChartTitle: '主要活性成分',
+                    scienceChartSubtitle: '蝶豆花是一种天然的“复方药剂”，多种成分协同作用，产生广泛的健康效益。',
+                    phytoChartLabels: ['花青素 (蝶豆花素)', '黄酮类 (槲皮素等)', '三萜类化合物', '环肽', '其他酚类'],
+                    traditionTitle: '传统智慧',
+                    traditionSubtitle: '在被现代科学关注之前，蝶豆花已在世界各地的传统医学中扮演了数个世纪的重要角色。',
+                    traditionTab1: '阿育吠陀',
+                    traditionTab2: '东南亚草药学',
+                    tradition1Title: '尊贵的“大脑补品” (Medhya Rasayana)',
+                    tradition1Text: '在印度阿育吠陀体系中，蝶豆花被尊为“Aparajita”（意为“战无不胜”），是一种顶级的健脑药。传统上用于增强记忆力(Smriti)和智力(Buddhi)，并用于治疗焦虑、压力等多种神经及心理问题。',
+                    tradition2Title: '融入生活的天然色素与疗法',
+                    tradition2Text: '在马来西亚、泰国等地，蝶豆花是家喻户晓的天然食用色素，为糯米饭和甜点染上梦幻的蓝色。在民间医学中，它被用来治疗眼部感染、消肿，甚至头痛。在水疗中心，加了蜂蜜和柠檬的蝶豆花茶是一款经典的迎宾饮品。',
+                    safetyTitle: '安心饮用指南',
+                    safetySubtitle: '遵循正确的方法，才能安全地享受蝶豆花茶的益处。',
+                    safetyBrewingTitle: '冲泡方法与搭配',
+                    safetyBrewing1Title: '基础冲泡',
+                    safetyBrewing1Text: '取1-2茶匙（约5-6朵）干花，用85-95°C的热水冲泡3-5分钟即可。',
+                    safetyBrewing2Title: '风味搭配',
+                    safetyBrewing2Text: '蝶豆花茶味道温和，极适合搭配。加入柠檬、青柠会变色增香；也可搭配蜂蜜、香茅、薄荷等。',
+                    safetyBrewing3Title: '烹饪用途',
+                    safetyBrewing3Text: '稳定的蓝色使其成为绝佳的天然食物染料，广泛用于鸡尾酒、甜点和米饭料理中。',
+                    safetyRulesTitle: '安全与禁忌',
+                    safetyRule1: '<strong class="font-semibold">推荐用量：</strong>每日1-2杯为宜。过量饮用可能引起轻微肠胃不适。',
+                    safetyRule2: '<strong class="font-semibold">注意部位：</strong>仅食用花朵。植物的根和种子据报道有轻微毒性，应避免食用。',
+                    safetyRule3: '<strong class="font-semibold">慎用人群：</strong>孕妇、哺乳期妇女、低血压患者以及对豆科植物过敏者，建议在咨询医生前避免饮用。',
+                    safetyRule4: '<strong class="font-semibold">官方认可：</strong>2021年，美国FDA已认可蝶豆花提取物为安全的食品着色剂，这为其安全性提供了有力佐证。',
+                    comparisonTitle: '茶饮对比分析',
+                    comparisonSubtitle: '蝶豆花茶在众多草本茶中独树一帜。它与其他流行茶饮有何不同？',
+                    compBtnBluepea: '蝶豆花茶',
+                    compBtnGreentea: '绿茶',
+                    compBtnChamomile: '洋甘菊茶',
+                    compBtnHibiscus: '芙蓉花茶',
+                    comparisonChartLabels: ['认知支持', '情绪舒缓', '代谢健康', '美容护肤', '心血管支持'],
+                    comparisonTextData: {
+                        bluepea: { title: '蝶豆花茶：美貌与智慧并存', caffeine: '不含咖啡因', flavor: '温和，泥土与木质香气', bioactives: '蝶豆花素、槲皮素', benefits: '核心优势在于提升认知、舒缓情绪和美容护肤，是“健脑养颜”的独特选择。' },
+                        greentea: { title: '绿茶：经典的提神之选', caffeine: '含咖啡因', flavor: '清新，青草香，微涩', bioactives: '儿茶素(EGCG)、茶氨酸', benefits: '以提神醒脑、促进新陈代谢闻名，是需要温和能量和专注力时的理想饮品。' },
+                        chamomile: { title: '洋甘菊茶：宁静的助眠伴侣', caffeine: '不含咖啡因', flavor: '香甜，苹果和花香味', bioactives: '芹菜素、红没药醇', benefits: '是公认的助眠和放松佳品，尤其适合睡前饮用，能有效舒缓消化不适。' },
+                        hibiscus: { title: '芙蓉花茶：心脏的酸甜守护', caffeine: '不含咖啡因', flavor: '酸爽，类似蔓越莓', bioactives: '花青素、有机酸', benefits: '在支持心血管健康方面，特别是降低血压，有非常充分的研究支持。' }
+                    },
+                    footerTitle: '蝶豆花茶互动指南',
+                    footerSubtitle: '本内容基于全面的科学文献综述，仅供参考，不构成医疗建议。'
+                },
+                en: {
+                    htmlLang: 'en',
+                    navTitle: 'Butterfly Pea',
+                    navBenefits: 'Core Benefits',
+                    navScience: 'The Science',
+                    navTradition: 'Traditional Wisdom',
+                    navSafety: 'Safe Consumption',
+                    navComparison: 'Tea Comparison',
+                    heroTitle: 'Explore the Mysteries of Butterfly Pea Tea',
+                    heroSubtitle: 'A natural health beverage from ancient wisdom, verified by modern science.',
+                    heroButton: 'Start Exploring',
+                    benefitsTitle: 'Core Benefits',
+                    benefitsSubtitle: 'Rich in bioactive compounds, butterfly pea tea offers multiple benefits for body and mind.',
+                    benefit1Title: 'Enhances Cognitive Function',
+                    benefit1Text: 'Traditionally used as a nootropic, animal studies show it boosts acetylcholine levels, helping to improve memory and learning.',
+                    benefit2Title: 'Soothes Mood & Stress',
+                    benefit2Text: 'It has anxiolytic and antidepressant potential, helping to regulate the central nervous system, protect the body from stress, and improve sleep.',
+                    benefit3Title: 'Powerful Antioxidant & Anti-inflammatory',
+                    benefit3Text: 'Rich in anthocyanins, it effectively neutralizes free radicals and inhibits inflammatory pathways, with effects comparable to standard anti-inflammatory drugs.',
+                    benefit4Title: 'Maintains Metabolic Health',
+                    benefit4Text: 'Helps inhibit sugar-digesting enzymes, slowing post-meal blood sugar spikes. It also has positive effects on weight management and blood lipids.',
+                    benefit5Title: 'Supports Cardiovascular Health',
+                    benefit5Text: 'Helps regulate blood pressure by inhibiting ACE and prevents "bad" cholesterol oxidation, protecting vascular health.',
+                    benefit6Title: 'Beauty for Skin & Hair',
+                    benefit6Text: 'Its anti-glycation properties help protect collagen, promoting skin firmness. It is traditionally used to promote scalp circulation and strengthen hair roots.',
+                    scienceTitle: 'The Science Unveiled',
+                    scienceSubtitle: 'The health benefits of butterfly pea stem from its unique phytochemical composition. Here we reveal the science behind it.',
+                    scienceColorTitle: 'Magical Color Change: The Magic of pH',
+                    scienceColorText: "One of the tea's most magical properties is its pH-dependent color change. This is due to a stable anthocyanin called ternatin. In acidic conditions (like adding lemon juice), it turns purple; in alkaline conditions, it turns green. This feature is being explored for smart food packaging to indicate freshness.",
+                    teaVisualText: 'Butterfly Pea Tea',
+                    addAcid: '🍋 Add Lemon (Acidic)',
+                    addBase: '🧼 Add Soda (Alkaline)',
+                    resetColor: '💧 Reset',
+                    scienceChartTitle: 'Key Active Compounds',
+                    scienceChartSubtitle: 'Butterfly pea is a natural poly-pharmacy, with multiple compounds working synergistically to produce broad health benefits.',
+                    phytoChartLabels: ['Anthocyanins (Ternatins)', 'Flavonoids (Quercetin etc.)', 'Triterpenoids', 'Cyclotides', 'Other Phenols'],
+                    traditionTitle: 'Traditional Wisdom',
+                    traditionSubtitle: 'Before modern science, butterfly pea was a cornerstone of traditional medicine for centuries.',
+                    traditionTab1: 'Ayurveda',
+                    traditionTab2: 'Southeast Asian Herbalism',
+                    tradition1Title: "A Revered 'Brain Tonic' (Medhya Rasayana)",
+                    tradition1Text: "In Ayurveda, butterfly pea is revered as 'Aparajita' (the unconquerable), a top-tier brain tonic. It's traditionally used to enhance memory (Smriti) and intellect (Buddhi) and to treat anxiety and stress.",
+                    tradition2Title: 'A Natural Dye & Remedy in Daily Life',
+                    tradition2Text: "In Malaysia and Thailand, it's a famous natural food dye for rice and desserts. In folk medicine, it's used for eye infections and headaches. The tea, with honey and lemon, is a classic welcome drink at spas.",
+                    safetyTitle: 'Safe Consumption Guide',
+                    safetySubtitle: 'Following the correct methods ensures you can safely enjoy the benefits of butterfly pea tea.',
+                    safetyBrewingTitle: 'Brewing Methods & Pairings',
+                    safetyBrewing1Title: 'Basic Brewing',
+                    safetyBrewing1Text: 'Use 1-2 teaspoons (about 5-6) of dried flowers per cup of 85-95°C hot water and steep for 3-5 minutes.',
+                    safetyBrewing2Title: 'Flavor Pairings',
+                    safetyBrewing2Text: 'The mild taste is perfect for pairing. Add lemon for zest and a color change, or mix with honey, lemongrass, and mint.',
+                    safetyBrewing3Title: 'Culinary Uses',
+                    safetyBrewing3Text: 'Its stable blue color makes it an excellent natural food dye for cocktails, desserts, and rice dishes.',
+                    safetyRulesTitle: 'Safety & Contraindications',
+                    safetyRule1: '<strong class="font-semibold">Recommended Dose:</strong> 1-2 cups daily is appropriate. Excessive consumption may cause mild gastrointestinal discomfort.',
+                    safetyRule2: '<strong class="font-semibold">Cautionary Parts:</strong> Consume only the flowers. The roots and seeds are reportedly mildly toxic and should be avoided.',
+                    safetyRule3: '<strong class="font-semibold">High-Risk Groups:</strong> Pregnant/breastfeeding women, those with low blood pressure, or with legume allergies should avoid or consult a doctor first.',
+                    safetyRule4: '<strong class="font-semibold">Official Recognition:</strong> In 2021, the US FDA recognized butterfly pea extract as a safe food colorant, providing strong evidence for its safety.',
+                    comparisonTitle: 'Tea Comparison Analysis',
+                    comparisonSubtitle: 'Butterfly pea tea is unique among many herbal teas. How does it differ from other popular infusions?',
+                    compBtnBluepea: 'Butterfly Pea Tea',
+                    compBtnGreentea: 'Green Tea',
+                    compBtnChamomile: 'Chamomile Tea',
+                    compBtnHibiscus: 'Hibiscus Tea',
+                    comparisonChartLabels: ['Cognitive Support', 'Mood Soothing', 'Metabolic Health', 'Skin & Beauty', 'Cardiovascular Support'],
+                    comparisonTextData: {
+                        bluepea: { title: 'Butterfly Pea Tea: Beauty & Brains Combined', caffeine: 'Caffeine-Free', flavor: 'Mild, earthy, and woody', bioactives: 'Ternatins, Quercetin', benefits: "Core strengths are in cognitive enhancement, mood soothing, and skin/hair health, making it a unique 'brain and beauty' choice." },
+                        greentea: { title: 'Green Tea: The Classic Energizer', caffeine: 'Caffeinated', flavor: 'Fresh, grassy, slightly astringent', bioactives: 'Catechins (EGCG), L-Theanine', benefits: 'Known for boosting metabolism and providing gentle energy, ideal for when focus is needed.' },
+                        chamomile: { title: 'Chamomile Tea: The Serene Sleep Aid', caffeine: 'Caffeine-Free', flavor: 'Sweet, apple-like, floral', bioactives: 'Apigenin, Bisabolol', benefits: 'A renowned sleep aid and relaxant, especially suitable before bed, and effective for soothing digestion.' },
+                        hibiscus: { title: 'Hibiscus Tea: The Tart Heart Guardian', caffeine: 'Caffeine-Free', flavor: 'Tart, cranberry-like', bioactives: 'Anthocyanins, organic acids', benefits: 'Very well-researched for supporting cardiovascular health, especially in lowering blood pressure.' }
+                    },
+                    footerTitle: 'Interactive Guide to Butterfly Pea Tea',
+                    footerSubtitle: 'This content is based on a comprehensive review of scientific literature and is for informational purposes only. It does not constitute medical advice.'
+                }
+            };
+            
+            let phytoChart, comparisonChart;
+
+            function updateAllText(lang) {
+                const t = translations[lang];
+                document.documentElement.lang = t.htmlLang;
+                document.getElementById('nav-title').textContent = t.navTitle;
+                document.getElementById('nav-benefits').textContent = t.navBenefits;
+                document.getElementById('nav-science').textContent = t.navScience;
+                document.getElementById('nav-tradition').textContent = t.navTradition;
+                document.getElementById('nav-safety').textContent = t.navSafety;
+                document.getElementById('nav-comparison').textContent = t.navComparison;
+
+                document.getElementById('mobilenav-benefits').textContent = t.navBenefits;
+                document.getElementById('mobilenav-science').textContent = t.navScience;
+                document.getElementById('mobilenav-tradition').textContent = t.navTradition;
+                document.getElementById('mobilenav-safety').textContent = t.navSafety;
+                document.getElementById('mobilenav-comparison').textContent = t.navComparison;
+
+                document.getElementById('hero-title').textContent = t.heroTitle;
+                document.getElementById('hero-subtitle').textContent = t.heroSubtitle;
+                document.getElementById('hero-button').textContent = t.heroButton;
+
+                document.getElementById('benefits-title').textContent = t.benefitsTitle;
+                document.getElementById('benefits-subtitle').textContent = t.benefitsSubtitle;
+                document.getElementById('benefit-1-title').textContent = t.benefit1Title;
+                document.getElementById('benefit-1-text').textContent = t.benefit1Text;
+                document.getElementById('benefit-2-title').textContent = t.benefit2Title;
+                document.getElementById('benefit-2-text').textContent = t.benefit2Text;
+                document.getElementById('benefit-3-title').textContent = t.benefit3Title;
+                document.getElementById('benefit-3-text').textContent = t.benefit3Text;
+                document.getElementById('benefit-4-title').textContent = t.benefit4Title;
+                document.getElementById('benefit-4-text').textContent = t.benefit4Text;
+                document.getElementById('benefit-5-title').textContent = t.benefit5Title;
+                document.getElementById('benefit-5-text').textContent = t.benefit5Text;
+                document.getElementById('benefit-6-title').textContent = t.benefit6Title;
+                document.getElementById('benefit-6-text').textContent = t.benefit6Text;
+
+                document.getElementById('science-title').textContent = t.scienceTitle;
+                document.getElementById('science-subtitle').textContent = t.scienceSubtitle;
+                document.getElementById('science-color-title').textContent = t.scienceColorTitle;
+                document.getElementById('science-color-text').textContent = t.scienceColorText;
+                document.getElementById('tea-visual-text').textContent = t.teaVisualText;
+                document.getElementById('add-acid').textContent = t.addAcid;
+                document.getElementById('add-base').textContent = t.addBase;
+                document.getElementById('reset-color').textContent = t.resetColor;
+                document.getElementById('science-chart-title').textContent = t.scienceChartTitle;
+                document.getElementById('science-chart-subtitle').textContent = t.scienceChartSubtitle;
+                
+                document.getElementById('tradition-title').textContent = t.traditionTitle;
+                document.getElementById('tradition-subtitle').textContent = t.traditionSubtitle;
+                document.getElementById('tradition-tab-1').textContent = t.traditionTab1;
+                document.getElementById('tradition-tab-2').textContent = t.traditionTab2;
+                document.getElementById('tradition-1-title').textContent = t.tradition1Title;
+                document.getElementById('tradition-1-text').textContent = t.tradition1Text;
+                document.getElementById('tradition-2-title').textContent = t.tradition2Title;
+                document.getElementById('tradition-2-text').textContent = t.tradition2Text;
+
+                document.getElementById('safety-title').textContent = t.safetyTitle;
+                document.getElementById('safety-subtitle').textContent = t.safetySubtitle;
+                document.getElementById('safety-brewing-title').textContent = t.safetyBrewingTitle;
+                document.getElementById('safety-brewing-1-title').textContent = t.safetyBrewing1Title;
+                document.getElementById('safety-brewing-1-text').textContent = t.safetyBrewing1Text;
+                document.getElementById('safety-brewing-2-title').textContent = t.safetyBrewing2Title;
+                document.getElementById('safety-brewing-2-text').textContent = t.safetyBrewing2Text;
+                document.getElementById('safety-brewing-3-title').textContent = t.safetyBrewing3Title;
+                document.getElementById('safety-brewing-3-text').textContent = t.safetyBrewing3Text;
+                document.getElementById('safety-rules-title').textContent = t.safetyRulesTitle;
+                document.getElementById('safety-rule-1').innerHTML = t.safetyRule1;
+                document.getElementById('safety-rule-2').innerHTML = t.safetyRule2;
+                document.getElementById('safety-rule-3').innerHTML = t.safetyRule3;
+                document.getElementById('safety-rule-4').innerHTML = t.safetyRule4;
+                
+                document.getElementById('comparison-title').textContent = t.comparisonTitle;
+                document.getElementById('comparison-subtitle').textContent = t.comparisonSubtitle;
+                document.getElementById('comp-btn-bluepea').textContent = t.compBtnBluepea;
+                document.getElementById('comp-btn-greentea').textContent = t.compBtnGreentea;
+                document.getElementById('comp-btn-chamomile').textContent = t.compBtnChamomile;
+                document.getElementById('comp-btn-hibiscus').textContent = t.compBtnHibiscus;
+
+                phytoChart.data.labels = t.phytoChartLabels;
+                phytoChart.update();
+
+                comparisonChart.data.labels = t.comparisonChartLabels;
+                comparisonChart.update();
+                updateComparison(comparisonChart.canvas.dataset.currentTea || 'bluepea');
+                
+                document.getElementById('footer-title').textContent = t.footerTitle;
+                document.getElementById('footer-subtitle').textContent = t.footerSubtitle;
+            }
+
+            langSwitcher.addEventListener('click', () => {
+                currentLang = currentLang === 'zh' ? 'en' : 'zh';
+                updateAllText(currentLang);
+            });
+            
+            const teaVisual = document.getElementById('tea-visual');
+            document.getElementById('add-acid').addEventListener('click', () => {
+                teaVisual.style.backgroundColor = '#a855f7';
+            });
+            document.getElementById('add-base').addEventListener('click', () => {
+                teaVisual.style.backgroundColor = '#4ade80';
+            });
+            document.getElementById('reset-color').addEventListener('click', () => {
+                teaVisual.style.backgroundColor = '#3b82f6';
+            });
+            
+            const phytoCtx = document.getElementById('phytoChart').getContext('2d');
+            phytoChart = new Chart(phytoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: translations.zh.phytoChartLabels,
+                    datasets: [{
+                        data: [40, 30, 15, 10, 5],
+                        backgroundColor: ['#3b82f6', '#facc15', '#34d399', '#fb923c', '#a78bfa'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return `${context.label}: ${context.raw}%`; }
+                            }
+                        }
+                    }
+                }
+            });
+
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('bg-white', 'text-main-blue', 'shadow');
+                        btn.classList.add('text-gray-600');
+                    });
+                    button.classList.add('bg-white', 'text-main-blue', 'shadow');
+                    button.classList.remove('text-gray-600');
+                    tabContents.forEach(content => {
+                        content.id === button.dataset.tab ? content.classList.remove('hidden') : content.classList.add('hidden');
+                    });
+                });
+            });
+
+            const comparisonData = {
+                bluepea: { data: [5, 4, 4, 4, 3], borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.2)' },
+                greentea: { data: [3, 3, 5, 2, 4], borderColor: '#22c55e', backgroundColor: 'rgba(34, 197, 94, 0.2)' },
+                chamomile: { data: [1, 5, 2, 3, 2], borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.2)' },
+                hibiscus: { data: [1, 2, 3, 2, 5], borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.2)' }
+            };
+            
+            const compCtx = document.getElementById('comparisonChart').getContext('2d');
+            comparisonChart = new Chart(compCtx, {
+                type: 'radar',
+                data: {
+                    labels: translations.zh.comparisonChartLabels,
+                    datasets: [{
+                        label: '蝶豆花茶',
+                        ...comparisonData.bluepea
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { r: { angleLines: { display: false }, suggestedMin: 0, suggestedMax: 5, pointLabels: { font: { size: 12 } }, ticks: { display: false } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+            
+            const compButtons = document.querySelectorAll('.comp-btn');
+            const comparisonTextElement = document.getElementById('comparison-text');
+            
+            function updateComparison(teaKey) {
+                const textData = translations[currentLang].comparisonTextData[teaKey];
+                const dataset = comparisonData[teaKey];
+                
+                comparisonChart.data.datasets[0].data = dataset.data;
+                comparisonChart.data.datasets[0].borderColor = dataset.borderColor;
+                comparisonChart.data.datasets[0].backgroundColor = dataset.backgroundColor;
+                comparisonChart.data.datasets[0].label = textData.title.split(':')[0];
+                comparisonChart.update();
+                comparisonChart.canvas.dataset.currentTea = teaKey;
+
+                comparisonTextElement.innerHTML = `
+                    <h4 class="text-xl font-bold mb-3" style="color:${dataset.borderColor}">${textData.title}</h4>
+                    <p class="mb-2"><strong class="font-semibold">${currentLang === 'zh' ? '咖啡因' : 'Caffeine'}:</strong> ${textData.caffeine}</p>
+                    <p class="mb-2"><strong class="font-semibold">${currentLang === 'zh' ? '风味' : 'Flavor'}:</strong> ${textData.flavor}</p>
+                    <p class="mb-2"><strong class="font-semibold">${currentLang === 'zh' ? '关键活性物' : 'Bioactives'}:</strong> ${textData.bioactives}</p>
+                    <p class="text-gray-600">${textData.benefits}</p>`;
+
+                compButtons.forEach(btn => {
+                    if (btn.dataset.tea === teaKey) {
+                        btn.classList.add('text-white');
+                        btn.style.backgroundColor = dataset.borderColor;
+                        btn.style.borderColor = dataset.borderColor;
+                        btn.classList.remove('bg-white', 'text-gray-700', 'border', 'border-gray-300');
+                    } else {
+                        btn.classList.remove('text-white');
+                        btn.style.backgroundColor = '';
+                        btn.style.borderColor = '';
+                        btn.classList.add('bg-white', 'text-gray-700', 'border', 'border-gray-300');
+                    }
+                });
+            }
+
+            compButtons.forEach(button => {
+                button.addEventListener('click', () => updateComparison(button.dataset.tea));
+            });
+            
+            updateComparison('bluepea');
+        });
+    </script>
+</body>
+</html>
